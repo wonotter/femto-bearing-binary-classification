@@ -55,7 +55,7 @@ def prepare_dataset(bearing_dir=BEARING_DIR):
     # 200개짜리 딕셔너리를 포함한 리스트 -> 2차원 테이블 형태로 변환
     df = pd.DataFrame(records)
     feature_names = [c for c in df.columns if c != 'label']
-    X = df[feature_names].values # label을 제외한 26개 열만 꺼냄
+    X = df[feature_names].values # label을 제외한 14개 열만 꺼냄
     y = df['label'].values # 정상(0) or 열화(1)의 정답 상태를 가지고 있는 정답지
 
     print(f"\n특징 추출 완료")

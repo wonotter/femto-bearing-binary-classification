@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 
 plt.rcParams['font.family'] = 'Malgun Gothic'
 plt.rcParams['axes.unicode_minus'] = False
@@ -95,5 +97,24 @@ def plot_feature_importance(importances, feature_names, top_n=10, title=None):
 
     ax.set_title(title, fontsize=14, fontweight='bold')
 
+    plt.tight_layout()
+    plt.show()
+
+def plot_explained_variance(X):
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+    pca = PCA(n_components=min(X.shape))
+    pca.fit(X_scaled)
+
+    cumulative = np.cumsum(pca.explained_variance_ratio_)
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.bar(range(1, len(cumulative) + 1), pca.explained_variance_ratio_, label='개별')
+    ax.plot(range(1, len(cumulative) + 1), cumulative, 'ro-', label='누적')
+    ax.axhline(y=0.9, color='gray', linestyle='--', label='90%')
+    ax.set_xlabel('주성분 번호')
+    ax.set_ylabel('설명 분산 비율')
+    ax.set_title('PCA Scree Plot')
+    ax.legend()
     plt.tight_layout()
     plt.show()

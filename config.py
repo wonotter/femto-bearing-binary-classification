@@ -26,6 +26,9 @@ LABEL_DEGRADED = 1
 # 랜덤 seed 값으로 해당 숫자를 넣으면 데이터를 일관적으로 추출하는 것이 보장됨
 RANDOM_STATE = 42
 
+# PCA
+PCA_N_COMPONENTS = 3
+
 # SVM
 SVM_PARAMS = {
     'kernel': 'rbf',
