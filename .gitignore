@@ -19,7 +19,7 @@ env/
 Thumbs.db
 .DS_Store
 
-# DataSet
+# Dataset
 FEMTO_Bearing/
 *.csv
 *.mat
