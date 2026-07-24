@@ -17,9 +17,9 @@ STFT_NOVERLAP = 448 # 오버랩 정도 (87.5%)
 
 # 주파수 대역 정의 (Hz)
 FREQ_BANDS = {
-    'low': (0, 1000), # 회전 관련
-    'mid': (1000, 5000), # 결함 초기
-    'high': (5000, 12800) # 마모/이상
+    'low': (0, 1000), # 회전 관련 + 결함 기본 주파수
+    'mid': (1000, 5000), # 구조 공진 대역 
+    'high': (5000, 12800) # 고주파 대역 (초기 미세 결함)
 }
 
 N_EARLY_FILES = 100 # 초기 파일 수 (정상)
@@ -33,22 +33,45 @@ RANDOM_STATE = 42
 # PCA
 PCA_N_COMPONENTS = 3
 
-# SVM
-SVM_PARAMS = {
+# SVM 기본 파라미터 (탐색하지 않는 고정값)
+SVM_BASE_PARAMS = {
     'kernel': 'rbf',
-    'C': 1.0,
-    'gamma': 'scale',
     'class_weight': 'balanced',
     'random_state': RANDOM_STATE,
 }
 
-# Random Forest
-RF_PARAMS = {
+# SVM 홀드아웃 검증에서 탐색할 하이퍼파라미터 후보
+SVM_PARAM_GRID = {
+    'C': [0.1, 1, 10, 100],
+    'gamma': ['scale', 0.01, 0.001],
+}
+
+# SVM 7:3 고정 파라미터 (Validation 없이 사용)
+SVM_FIXED_PARAMS = {
+    **SVM_BASE_PARAMS,
+    'C': 1.0,
+    'gamma': 'scale',
+}
+
+# Random Forest 기본 파라미터 (탐색하지 않는 고정값)
+RF_BASE_PARAMS = {
+    'class_weight': 'balanced',
+    'random_state': RANDOM_STATE,
+    'n_jobs': -1,
+}
+
+# Random Forest 홀드아웃 검증에서 탐색할 하이퍼파라미터 후보
+RF_PARAM_GRID = {
+    'n_estimators': [50, 100, 200],
+    'max_depth': [None, 10, 20],
+    'min_samples_split': [2, 5, 10],
+}
+
+# Random Forest 7:3 고정 파라미터 (Validation 없이 사용)
+RF_FIXED_PARAMS = {
+    **RF_BASE_PARAMS,
     'n_estimators': 100,
     'max_depth': None,
     'min_samples_split': 5,
     'min_samples_leaf': 2,
-    'class_weight': 'balanced',
-    'random_state': RANDOM_STATE,
-    'n_jobs': -1,
 }

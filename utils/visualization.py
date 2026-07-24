@@ -118,3 +118,35 @@ def plot_explained_variance(X):
     ax.legend()
     plt.tight_layout()
     plt.show()
+
+def plot_pca_loading(X, feature_names, n_components=3):
+    """각 주성분에 대한 원래 피처의 기여도(Loading)를 히트맵으로 시각화"""
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+
+    pca = PCA(n_components=n_components)
+    pca.fit(X_scaled)
+
+    loadings = pca.components_.T  # (피처 수, 주성분 수)
+    loading_df = np.array(loadings)
+
+    pc_labels = [f'PC{i+1}' for i in range(n_components)]
+
+    fig, ax = plt.subplots(figsize=(8, len(feature_names) * 0.4 + 1))
+    im = ax.imshow(loading_df, cmap='RdBu_r', aspect='auto', vmin=-1, vmax=1)
+
+    ax.set_xticks(range(n_components))
+    ax.set_xticklabels(pc_labels)
+    ax.set_yticks(range(len(feature_names)))
+    ax.set_yticklabels(feature_names)
+
+    for i in range(len(feature_names)):
+        for j in range(n_components):
+            ax.text(j, i, f'{loading_df[i, j]:.2f}',
+                    ha='center', va='center', fontsize=8,
+                    color='white' if abs(loading_df[i, j]) > 0.5 else 'black')
+
+    plt.colorbar(im, ax=ax, label='Loading 계수')
+    ax.set_title('PCA Loading Plot (피처별 주성분 기여도)', fontsize=13, fontweight='bold')
+    plt.tight_layout()
+    plt.show()

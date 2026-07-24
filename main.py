@@ -8,6 +8,7 @@ from utils.visualization import (
     plot_model_comparison,
     plot_feature_importance,
     plot_explained_variance,
+    plot_pca_loading,
 )
 from config import (
     BEARING_DIR, BASE_DIR, PCA_N_COMPONENTS,
@@ -23,7 +24,8 @@ def main():
 
     X, y, feature_names = prepare_dataset(BEARING_DIR)
 
-    plot_explained_variance(X)
+    plot_explained_variance(X) # Scree Plot: PCA 몇 개가 필요한가?
+    plot_pca_loading(X, feature_names, n_components=PCA_N_COMPONENTS) # Loading Plot: 각 주성분에 대한 원래 피처의 기여도
 
     pca_names = [f'PC{i + 1}' for i in range(PCA_N_COMPONENTS)]
 
