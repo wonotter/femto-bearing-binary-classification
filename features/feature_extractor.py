@@ -74,8 +74,8 @@ def apply_pca(X_train, n_components):
     pca = PCA(n_components=n_components)
     X_train_pca = pca.fit_transform(X_train_scaled)
 
-    repr_features = pca.explained_variance_ratio_
-    cumulative = np.cumsum(repr_features)
+    explained_features = pca.explained_variance_ratio_ # 개별 주성분의 설명 분산 비율
+    cumulative = np.cumsum(explained_features) # 누적 설명 분산 비율
     print(f"PCA: {n_components}개 주성분으로 전체 분산의 {cumulative[-1]*100:.1f}% 대표 가능")
 
     return X_train_pca, pca, scaler

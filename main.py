@@ -1,3 +1,4 @@
+import os
 from data.data_loader import prepare_dataset
 from data.data_splitter import split_622, split_73
 from models.svm_model import run_svm_622, run_svm_73
@@ -8,7 +9,10 @@ from utils.visualization import (
     plot_feature_importance,
     plot_explained_variance,
 )
-from config import BEARING_DIR, PCA_N_COMPONENTS
+from config import (
+    BEARING_DIR, BASE_DIR, PCA_N_COMPONENTS,
+    TRAIN_CONDITION, TEST_CONDITIONS,
+)
 from features.feature_extractor import apply_pca, transform_pca
 
 def main():
@@ -28,9 +32,9 @@ def main():
 
     X_train, X_val, X_test, y_train, y_val, y_test = split_622(X, y)
 
-    X_train_pca, pca, scaler = apply_pca(X_train, PCA_N_COMPONENTS)
-    X_val_pca = transform_pca(X_val, pca, scaler)
-    X_test_pca = transform_pca(X_test, pca, scaler)
+    X_train_pca, pca_622, scaler_622 = apply_pca(X_train, PCA_N_COMPONENTS)
+    X_val_pca = transform_pca(X_val, pca_622, scaler_622)
+    X_test_pca = transform_pca(X_test, pca_622, scaler_622)
 
     svm_622 = run_svm_622(X_train_pca, X_val_pca, X_test_pca, y_train, y_val, y_test)
     print()
@@ -41,35 +45,80 @@ def main():
 
     X_train, X_test, y_train, y_test = split_73(X, y)
 
-    X_train_pca, pca, scaler = apply_pca(X_train, PCA_N_COMPONENTS)
-    X_test_pca = transform_pca(X_test, pca, scaler)
+    X_train_pca, pca_73, scaler_73 = apply_pca(X_train, PCA_N_COMPONENTS)
+    X_test_pca = transform_pca(X_test, pca_73, scaler_73)
     
     svm_73 = run_svm_73(X_train_pca, X_test_pca, y_train, y_test)
     print()
     rf_73 = run_rf_73(X_train_pca, X_test_pca, y_train, y_test, pca_names)
 
     # 시각화
-    all_results = {
+    first_results = {
         'SVM 6:2:2': svm_622,
         'RF 6:2:2': rf_622,
         'SVM 7:3': svm_73,
         'RF 7:3': rf_73,
     }
-    plot_confusion_matrices(all_results)
-    plot_model_comparison(all_results)
+    plot_confusion_matrices(first_results)
+    plot_model_comparison(first_results)
     plot_feature_importance(
         rf_622['feature_importances'],
         rf_622['feature_names'],
         top_n=PCA_N_COMPONENTS,
-        title=f'RF 6:2:2 Feature Importance (PCA {PCA_N_COMPONENTS})',
+        title=f'RF 6:2:2 Feature Importance (PCA = {PCA_N_COMPONENTS})',
     )
     
     plot_feature_importance(
         rf_73['feature_importances'],
         rf_73['feature_names'],
         top_n=PCA_N_COMPONENTS,
-        title=f'RF 7:3 Feature Importance (PCA {PCA_N_COMPONENTS})',
+        title=f'RF 7:3 Feature Importance (PCA = {PCA_N_COMPONENTS})',
     )
+
+    print("\n" + "=" * 60)
+    print("실험 C: 교차 조건 테스트")
+    print(f"학습 조건: {TRAIN_CONDITION} (실험 A, B에서 학습된 모델 재사용)")
+    print(f"테스트 조건: {TEST_CONDITIONS}")
+    print("=" * 60)
+
+    for test_cond in TEST_CONDITIONS:
+        print(f"\n{'─' * 40}")
+        print(f"테스트 조건: {test_cond}")
+        print(f"{'─' * 40}")
+
+        test_dir = os.path.join(BASE_DIR, test_cond)
+        X_cross, y_cross, _ = prepare_dataset(test_dir)
+
+        cond_results = {}
+
+        # 실험 A(6:2:2) 모델로 테스트
+        X_cross_622 = transform_pca(X_cross, pca_622, scaler_622)
+
+        y_pred, metrics = svm_622['model'].evaluate(X_cross_622, y_cross, set_name=test_cond)
+        cond_results[f'SVM 6:2:2→{test_cond}'] = {
+            'test': {'y_true': y_cross, 'y_pred': y_pred, 'metrics': metrics}
+        }
+
+        y_pred, metrics = rf_622['model'].evaluate(X_cross_622, y_cross, set_name=test_cond)
+        cond_results[f'RF 6:2:2→{test_cond}'] = {
+            'test': {'y_true': y_cross, 'y_pred': y_pred, 'metrics': metrics}
+        }
+
+        # 실험 B(7:3) 모델로 테스트
+        X_cross_73 = transform_pca(X_cross, pca_73, scaler_73)
+
+        y_pred, metrics = svm_73['model'].evaluate(X_cross_73, y_cross, set_name=test_cond)
+        cond_results[f'SVM 7:3→{test_cond}'] = {
+            'test': {'y_true': y_cross, 'y_pred': y_pred, 'metrics': metrics}
+        }
+
+        y_pred, metrics = rf_73['model'].evaluate(X_cross_73, y_cross, set_name=test_cond)
+        cond_results[f'RF 7:3→{test_cond}'] = {
+            'test': {'y_true': y_cross, 'y_pred': y_pred, 'metrics': metrics}
+        }
+
+        plot_confusion_matrices(cond_results)
+        plot_model_comparison(cond_results)
 
 if __name__ == "__main__":
     main()

@@ -7,6 +7,10 @@ import os
 BASE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'FEMTO_Bearing')
 BEARING_DIR = os.path.join(BASE_DIR, 'Cond1_1')
 
+# 교차 조건 실험
+TRAIN_CONDITION = 'Cond1_1'
+TEST_CONDITIONS = ['Cond1_2', 'Cond1_3']
+
 SAMPLING_FREQ = 25600 # 25.6 kHz
 STFT_NPERSEG = 512 # 윈도우 크기
 STFT_NOVERLAP = 448 # 오버랩 정도 (87.5%)
