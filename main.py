@@ -9,6 +9,9 @@ from utils.visualization import (
     plot_feature_importance,
     plot_explained_variance,
     plot_pca_loading,
+    plot_prediction_timeline,
+    plot_prediction_scatter_pca,
+    plot_prediction_heatmap_strip,
 )
 from config import (
     BEARING_DIR, BASE_DIR, PCA_N_COMPONENTS,
@@ -32,27 +35,27 @@ def main():
     print("\n")
     print("실험 A: Train:Validation:Test = 6:2:2")
 
-    X_train, X_val, X_test, y_train, y_val, y_test = split_622(X, y)
+    X_train_622, X_val_622, X_test_622, y_train_622, y_val_622, y_test_622, idx_train_622, idx_val_622, idx_test_622 = split_622(X, y)
 
-    X_train_pca, pca_622, scaler_622 = apply_pca(X_train, PCA_N_COMPONENTS)
-    X_val_pca = transform_pca(X_val, pca_622, scaler_622)
-    X_test_pca = transform_pca(X_test, pca_622, scaler_622)
+    X_train_pca_622, pca_622, scaler_622 = apply_pca(X_train_622, PCA_N_COMPONENTS)
+    X_val_pca_622 = transform_pca(X_val_622, pca_622, scaler_622)
+    X_test_pca_622 = transform_pca(X_test_622, pca_622, scaler_622)
 
-    svm_622 = run_svm_622(X_train_pca, X_val_pca, X_test_pca, y_train, y_val, y_test)
+    svm_622 = run_svm_622(X_train_pca_622, X_val_pca_622, X_test_pca_622, y_train_622, y_val_622, y_test_622)
     print()
-    rf_622 = run_rf_622(X_train_pca, X_val_pca, X_test_pca, y_train, y_val, y_test, pca_names)
+    rf_622 = run_rf_622(X_train_pca_622, X_val_pca_622, X_test_pca_622, y_train_622, y_val_622, y_test_622, pca_names)
 
     print("\n")
     print("실험 B: Train:Validation:Test = 7:3")
 
-    X_train, X_test, y_train, y_test = split_73(X, y)
+    X_train_73, X_test_73, y_train_73, y_test_73, idx_train_73, idx_test_73 = split_73(X, y)
 
-    X_train_pca, pca_73, scaler_73 = apply_pca(X_train, PCA_N_COMPONENTS)
-    X_test_pca = transform_pca(X_test, pca_73, scaler_73)
+    X_train_pca_73, pca_73, scaler_73 = apply_pca(X_train_73, PCA_N_COMPONENTS)
+    X_test_pca_73 = transform_pca(X_test_73, pca_73, scaler_73)
     
-    svm_73 = run_svm_73(X_train_pca, X_test_pca, y_train, y_test)
+    svm_73 = run_svm_73(X_train_pca_73, X_test_pca_73, y_train_73, y_test_73)
     print()
-    rf_73 = run_rf_73(X_train_pca, X_test_pca, y_train, y_test, pca_names)
+    rf_73 = run_rf_73(X_train_pca_73, X_test_pca_73, y_train_73, y_test_73, pca_names)
 
     # 시각화
     first_results = {
@@ -75,6 +78,53 @@ def main():
         rf_73['feature_names'],
         top_n=PCA_N_COMPONENTS,
         title=f'RF 7:3 Feature Importance (PCA = {PCA_N_COMPONENTS})',
+    )
+
+    test_indices_map = {
+        'SVM 6:2:2': idx_test_622,
+        'RF 6:2:2': idx_test_622,
+        'SVM 7:3': idx_test_73,
+        'RF 7:3': idx_test_73,
+    }
+
+    for name, result in first_results.items():
+        test_data = result['test']
+        y_true = test_data['y_true']
+        y_pred = test_data['y_pred']
+        sample_indices = test_indices_map[name]
+
+        plot_prediction_timeline(
+            y_true, y_pred, 
+            sample_indices=sample_indices, 
+            title=f'{name} - Predicted Timeline'
+        )
+        plot_prediction_heatmap_strip(
+            y_true, y_pred, 
+            sample_indices=sample_indices, 
+            title=f'{name} - Predicted Comparison Strip'
+        )
+        
+    # PCA 산점도 (테스트 셋 기준)
+    # 실험 A의 경우 X_test_pca 사용
+    plot_prediction_scatter_pca(
+        X_test_pca_622, y_test_622, svm_622['test']['y_pred'],
+        title='SVM 6:2:2 - PCA 공간 예측 결과'
+    )
+    
+    plot_prediction_scatter_pca(
+        X_test_pca_622, y_test_622, rf_622['test']['y_pred'],
+        title='RF 6:2:2 - PCA 공간 예측 결과'
+    )
+
+    # 실험 B PCA 산점도
+    plot_prediction_scatter_pca(
+        X_test_pca_73, y_test_73, svm_73['test']['y_pred'],
+        title='SVM 7:3 - PCA 공간 예측 결과'
+    )
+
+    plot_prediction_scatter_pca(
+        X_test_pca_73, y_test_73, rf_73['test']['y_pred'],
+        title='RF 7:3 - PCA 공간 예측 결과'
     )
 
     print("\n" + "=" * 60)
@@ -121,6 +171,42 @@ def main():
 
         plot_confusion_matrices(cond_results)
         plot_model_comparison(cond_results)
+
+        for cond_name, cond_result in cond_results.items():
+            test_data = cond_result['test']
+            
+            plot_prediction_timeline(
+                test_data['y_true'], test_data['y_pred'],
+                title=f'{cond_name} - 예측 타임라인'
+            )
+            
+            plot_prediction_heatmap_strip(
+                test_data['y_true'], test_data['y_pred'],
+                title=f'{cond_name} - 예측 비교 Strip'
+            )
+
+        # PCA 산점도 (교차 조건 전체 데이터 기준)
+        # 6:2:2 / 7:3 각각 학습 시 맞춘 scaler·PCA로 변환한 좌표 사용
+        plot_prediction_scatter_pca(
+            X_cross_622, y_cross,
+            cond_results[f'SVM 6:2:2→{test_cond}']['test']['y_pred'],
+            title=f'SVM 6:2:2→{test_cond} - PCA 공간 예측 결과'
+        )
+        plot_prediction_scatter_pca(
+            X_cross_622, y_cross,
+            cond_results[f'RF 6:2:2→{test_cond}']['test']['y_pred'],
+            title=f'RF 6:2:2→{test_cond} - PCA 공간 예측 결과'
+        )
+        plot_prediction_scatter_pca(
+            X_cross_73, y_cross,
+            cond_results[f'SVM 7:3→{test_cond}']['test']['y_pred'],
+            title=f'SVM 7:3→{test_cond} - PCA 공간 예측 결과'
+        )
+        plot_prediction_scatter_pca(
+            X_cross_73, y_cross,
+            cond_results[f'RF 7:3→{test_cond}']['test']['y_pred'],
+            title=f'RF 7:3→{test_cond} - PCA 공간 예측 결과'
+        )
 
 if __name__ == "__main__":
     main()
