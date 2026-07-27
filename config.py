@@ -5,11 +5,14 @@
 import os
 
 BASE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'FEMTO_Bearing')
-BEARING_DIR = os.path.join(BASE_DIR, 'Cond1_1')
 
-# 교차 조건 실험
-TRAIN_CONDITION = 'Cond1_1'
-TEST_CONDITIONS = ['Cond1_2', 'Cond1_3']
+# 학습/테스트 조건 (리스트에 조건명을 추가·삭제하면 수량 변경 가능)
+# 예: TRAIN_CONDITIONS = ['Cond1_1']  /  ['Cond1_1', 'Cond1_2', 'Cond1_5']
+TRAIN_CONDITIONS = ['Cond1_1', 'Cond1_2']
+TEST_CONDITIONS = ['Cond1_3', 'Cond1_4']
+
+# 단일 조건 로더 기본값 (하위 호환)
+BEARING_DIR = os.path.join(BASE_DIR, TRAIN_CONDITIONS[0])
 
 SAMPLING_FREQ = 25600 # 25.6 kHz
 STFT_NPERSEG = 512 # 윈도우 크기
@@ -31,7 +34,7 @@ LABEL_DEGRADED = 1
 RANDOM_STATE = 42
 
 # PCA
-PCA_N_COMPONENTS = 2
+PCA_N_COMPONENTS = 3
 
 # SVM 기본 파라미터 (탐색하지 않는 고정값)
 SVM_BASE_PARAMS = {

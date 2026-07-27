@@ -14,8 +14,17 @@ plt.rcParams['axes.unicode_minus'] = False
 COLOR_NORMAL = '#4CAF50'      # 초록: 정상
 COLOR_ANOMALY = '#E53935'     # 빨강: 이상
 COLOR_MISCLASS = '#FF9800'    # 주황: 오분류 (이상 빨강과 구분)
-INDEX_AXIS_MAX = 200          # 원본 인덱스 축 표시 범위 (0 ~ 200)
+INDEX_AXIS_MAX = 200          # 원본 인덱스 축 기본 표시 범위
 INDEX_AXIS_TICK = 25
+
+
+def _axis_limit_from_indices(sample_indices):
+    """샘플 인덱스에 맞춰 x축 상한을 결정 (학습 조건 증가 시 자동 확장)."""
+    if sample_indices is None or len(sample_indices) == 0:
+        return INDEX_AXIS_MAX
+
+    max_idx = int(np.max(sample_indices))
+    return max(INDEX_AXIS_MAX, max_idx)
 
 
 def plot_confusion_matrices(results):
@@ -192,6 +201,7 @@ def plot_prediction_timeline(y_true, y_pred, sample_indices=None, title='예측 
     y_true, y_pred, x = _sort_by_original_index(y_true, y_pred, sample_indices)
     correct = y_true == y_pred
     incorrect = ~correct
+    axis_max = _axis_limit_from_indices(x)
 
     fig, axes = plt.subplots(2, 1, figsize=(14, 6), sharex=True)
 
@@ -202,7 +212,7 @@ def plot_prediction_timeline(y_true, y_pred, sample_indices=None, title='예측 
     ax.set_yticklabels(['정상', '이상'])
     ax.set_title('실제 라벨 (Ground Truth)')
     ax.set_ylabel('클래스')
-    ax.set_xlim(0, INDEX_AXIS_MAX)
+    ax.set_xlim(0, axis_max)
 
     # 하단: 예측 라벨 (맞춘 것은 클래스 색, 틀린 것은 주황 X)
     ax = axes[1]
@@ -229,8 +239,8 @@ def plot_prediction_timeline(y_true, y_pred, sample_indices=None, title='예측 
     ax.set_title('모델 예측 결과')
     ax.set_xlabel('원본 샘플 인덱스 (시간 순서)')
     ax.set_ylabel('클래스')
-    ax.set_xlim(0, INDEX_AXIS_MAX)
-    ax.set_xticks(np.arange(0, INDEX_AXIS_MAX + 1, INDEX_AXIS_TICK))
+    ax.set_xlim(0, axis_max)
+    ax.set_xticks(np.arange(0, axis_max + 1, INDEX_AXIS_TICK))
 
     legend_elements = [
         Line2D([0], [0], marker='o', color='w', markerfacecolor=COLOR_NORMAL,
@@ -289,9 +299,10 @@ def plot_prediction_scatter_pca(X_pca, y_true, y_pred, title='PCA 공간 예측 
 def plot_prediction_heatmap_strip(y_true, y_pred, sample_indices=None, title='예측 결과 비교 Strip'):
     """
     원본 인덱스 순으로 정렬한 뒤, 실제/예측/오분류를 가로 Strip으로 비교.
-    x축은 Timeline과 동일하게 0 ~ 200 등간격으로 표시한다.
+    x축은 Timeline과 동일하게 샘플 인덱스 범위에 맞춰 표시한다.
     """
     y_true, y_pred, x = _sort_by_original_index(y_true, y_pred, sample_indices)
+    axis_max = _axis_limit_from_indices(x)
     mismatch = (y_true != y_pred).astype(int)
     data = np.vstack([
         y_true.reshape(1, -1),
@@ -304,8 +315,8 @@ def plot_prediction_heatmap_strip(y_true, y_pred, sample_indices=None, title='�
     cmap_label = plt.cm.colors.ListedColormap([COLOR_NORMAL, COLOR_ANOMALY])
     cmap_mismatch = plt.cm.colors.ListedColormap(['#FFFFFF', COLOR_MISCLASS])
 
-    # Strip을 0 ~ 200 구간에 꽉 채워 양끝 여백이 생기지 않도록 함
-    extent = [0, INDEX_AXIS_MAX, 0, 1]
+    # Strip을 인덱스 구간에 꽉 채워 양끝 여백이 생기지 않도록 함
+    extent = [0, axis_max, 0, 1]
     rows = [
         (data[0:1], cmap_label, '실제'),
         (data[1:2], cmap_label, '예측'),
@@ -316,12 +327,12 @@ def plot_prediction_heatmap_strip(y_true, y_pred, sample_indices=None, title='�
         axes[i].imshow(row, aspect='auto', cmap=cmap, vmin=0, vmax=1, extent=extent)
         axes[i].set_yticks([0.5])
         axes[i].set_yticklabels([ylabel])
-        axes[i].set_xlim(0, INDEX_AXIS_MAX)
+        axes[i].set_xlim(0, axis_max)
         if i == 0:
             axes[i].set_title(title, fontsize=14, fontweight='bold')
 
     axes[2].set_xlabel('원본 샘플 인덱스 (시간 순서)')
-    axes[2].set_xticks(np.arange(0, INDEX_AXIS_MAX + 1, INDEX_AXIS_TICK))
+    axes[2].set_xticks(np.arange(0, axis_max + 1, INDEX_AXIS_TICK))
 
     legend_elements = [
         Patch(facecolor=COLOR_NORMAL, label='정상'),

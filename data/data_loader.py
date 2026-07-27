@@ -7,8 +7,8 @@ import sys
 sys.path.append("..")
 
 from config import (
-    BEARING_DIR, N_EARLY_FILES, N_LATE_FILES, 
-    LABEL_NORMAL, LABEL_DEGRADED
+    BASE_DIR, BEARING_DIR, N_EARLY_FILES, N_LATE_FILES,
+    LABEL_NORMAL, LABEL_DEGRADED,
 )
 from features.feature_extractor import extract_all_features
 
@@ -61,5 +61,50 @@ def prepare_dataset(bearing_dir=BEARING_DIR):
     print(f"\n특징 추출 완료")
     print(f"샘플: {X.shape[0]}, 특징 수: {X.shape[1]}")
     print(f"정상(0): {np.sum(y == LABEL_NORMAL)}, 열화(1): {np.sum(y == LABEL_DEGRADED)}")
+
+    return X, y, feature_names
+
+
+def prepare_datasets(conditions, base_dir=BASE_DIR):
+    """
+    여러 조건 폴더를 순서대로 불러와 하나의 (X, y)로 합친다.
+    conditions 예: ['Cond1_1', 'Cond1_2']
+    """
+    if not conditions:
+        raise ValueError("conditions 리스트가 비어 있습니다.")
+
+    X_list = []
+    y_list = []
+    feature_names = None
+
+    print(f"조건 {len(conditions)}개 로드: {conditions}")
+
+    for cond in conditions:
+        print(f"\n{'─' * 40}")
+        print(f"조건 로드: {cond}")
+        print(f"{'─' * 40}")
+
+        bearing_dir = os.path.join(base_dir, cond)
+        X, y, names = prepare_dataset(bearing_dir)
+
+        if feature_names is None:
+            feature_names = names
+        elif names != feature_names:
+            raise ValueError(
+                f"특징 이름이 조건마다 다릅니다. "
+                f"기준={feature_names}, {cond}={names}"
+            )
+
+        X_list.append(X)
+        y_list.append(y)
+
+    X = np.vstack(X_list)
+    y = np.concatenate(y_list)
+
+    print(f"\n{'=' * 40}")
+    print(f"다중 조건 병합 완료: {conditions}")
+    print(f"샘플: {X.shape[0]}, 특징 수: {X.shape[1]}")
+    print(f"정상(0): {np.sum(y == LABEL_NORMAL)}, 열화(1): {np.sum(y == LABEL_DEGRADED)}")
+    print(f"{'=' * 40}")
 
     return X, y, feature_names

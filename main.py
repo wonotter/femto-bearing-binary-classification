@@ -1,5 +1,5 @@
 import os
-from data.data_loader import prepare_dataset
+from data.data_loader import prepare_dataset, prepare_datasets
 from data.data_splitter import split_622, split_73
 from models.svm_model import run_svm_622, run_svm_73
 from models.rf_model import run_rf_622, run_rf_73
@@ -14,26 +14,30 @@ from utils.visualization import (
     plot_prediction_heatmap_strip,
 )
 from config import (
-    BEARING_DIR, BASE_DIR, PCA_N_COMPONENTS,
-    TRAIN_CONDITION, TEST_CONDITIONS,
+    BASE_DIR, PCA_N_COMPONENTS,
+    TRAIN_CONDITIONS, TEST_CONDITIONS,
 )
 from features.feature_extractor import apply_pca, transform_pca
 
 def main():
     print("-" * 60)
     print("FEMTO Bearing Dataset 이진 분류 실험")
+    print(f"학습 조건: {TRAIN_CONDITIONS}")
+    print(f"테스트 조건: {TEST_CONDITIONS}")
     print("-" * 60)
     print()
 
-    X, y, feature_names = prepare_dataset(BEARING_DIR)
+    # 학습 조건 여러 개를 합쳐 하나의 학습용 데이터셋 구성
+    X, y, feature_names = prepare_datasets(TRAIN_CONDITIONS)
 
     plot_explained_variance(X) # Scree Plot: PCA 몇 개가 필요한가?
     plot_pca_loading(X, feature_names, n_components=PCA_N_COMPONENTS) # Loading Plot: 각 주성분에 대한 원래 피처의 기여도
 
     pca_names = [f'PC{i + 1}' for i in range(PCA_N_COMPONENTS)]
+    train_label = '+'.join(TRAIN_CONDITIONS)
 
     print("\n")
-    print("실험 A: Train:Validation:Test = 6:2:2")
+    print(f"실험 A: Train:Validation:Test = 6:2:2 ({train_label})")
 
     X_train_622, X_val_622, X_test_622, y_train_622, y_val_622, y_test_622, idx_train_622, idx_val_622, idx_test_622 = split_622(X, y)
 
@@ -46,7 +50,7 @@ def main():
     rf_622 = run_rf_622(X_train_pca_622, X_val_pca_622, X_test_pca_622, y_train_622, y_val_622, y_test_622, pca_names)
 
     print("\n")
-    print("실험 B: Train:Validation:Test = 7:3")
+    print(f"실험 B: Train:Test = 7:3 ({train_label})")
 
     X_train_73, X_test_73, y_train_73, y_test_73, idx_train_73, idx_test_73 = split_73(X, y)
 
@@ -104,32 +108,30 @@ def main():
             title=f'{name} - Predicted Comparison Strip'
         )
         
-    # PCA 산점도 (테스트 셋 기준)
-    # 실험 A의 경우 X_test_pca 사용
+    # PCA 산점도 (학습 조건 내부 hold-out 테스트 셋 기준)
     plot_prediction_scatter_pca(
         X_test_pca_622, y_test_622, svm_622['test']['y_pred'],
-        title='SVM 6:2:2 - PCA 공간 예측 결과'
+        title=f'SVM 6:2:2 ({train_label}) - PCA 공간 예측 결과'
     )
     
     plot_prediction_scatter_pca(
         X_test_pca_622, y_test_622, rf_622['test']['y_pred'],
-        title='RF 6:2:2 - PCA 공간 예측 결과'
+        title=f'RF 6:2:2 ({train_label}) - PCA 공간 예측 결과'
     )
 
-    # 실험 B PCA 산점도
     plot_prediction_scatter_pca(
         X_test_pca_73, y_test_73, svm_73['test']['y_pred'],
-        title='SVM 7:3 - PCA 공간 예측 결과'
+        title=f'SVM 7:3 ({train_label}) - PCA 공간 예측 결과'
     )
 
     plot_prediction_scatter_pca(
         X_test_pca_73, y_test_73, rf_73['test']['y_pred'],
-        title='RF 7:3 - PCA 공간 예측 결과'
+        title=f'RF 7:3 ({train_label}) - PCA 공간 예측 결과'
     )
 
     print("\n" + "=" * 60)
     print("실험 C: 교차 조건 테스트")
-    print(f"학습 조건: {TRAIN_CONDITION} (실험 A, B에서 학습된 모델 재사용)")
+    print(f"학습 조건: {TRAIN_CONDITIONS} (실험 A, B에서 학습된 모델 재사용)")
     print(f"테스트 조건: {TEST_CONDITIONS}")
     print("=" * 60)
 
@@ -186,7 +188,6 @@ def main():
             )
 
         # PCA 산점도 (교차 조건 전체 데이터 기준)
-        # 6:2:2 / 7:3 각각 학습 시 맞춘 scaler·PCA로 변환한 좌표 사용
         plot_prediction_scatter_pca(
             X_cross_622, y_cross,
             cond_results[f'SVM 6:2:2→{test_cond}']['test']['y_pred'],
