@@ -13,6 +13,7 @@ from utils.visualization import (
     plot_prediction_scatter_pca,
     plot_prediction_heatmap_strip,
 )
+from utils.raw_signal_visualization import plot_time_domain_analysis
 from config import (
     BASE_DIR, PCA_N_COMPONENTS,
     TRAIN_CONDITIONS, TEST_CONDITIONS,
@@ -25,6 +26,14 @@ def main():
     print(f"학습 조건: {TRAIN_CONDITIONS}")
     print(f"테스트 조건: {TEST_CONDITIONS}")
     print("-" * 60)
+    print()
+
+    # 실험 시작 전: 학습 조건별 시간 영역 특성 추이 (실제 파일 번호)
+    print("시간 영역 분석 시각화 (전체 수명 + early/late 구간 표시)")
+    for cond in TRAIN_CONDITIONS:
+        bearing_dir = os.path.join(BASE_DIR, cond)
+        print(f"  - {cond}")
+        plot_time_domain_analysis(bearing_dir=bearing_dir, bearing_name=cond)
     print()
 
     # 학습 조건 여러 개를 합쳐 하나의 학습용 데이터셋 구성
