@@ -8,7 +8,7 @@ from sklearn.metrics import (
     classification_report,
 )
 
-TARGET_NAMES = ['정상', '열화']
+TARGET_NAMES = ['정상', '이상']
 
 # 혼동 행렬과 분류 리포트를 출력
 def print_evaluation_report(y_true, y_pred):
@@ -19,7 +19,7 @@ def print_evaluation_report(y_true, y_pred):
     print()
     print("Confusion Matrix:")
     print(f"실제: 정상 {cm[0][0]:>5}  {cm[0][1]:>5}")
-    print(f"실제: 열화 {cm[1][0]:>5}  {cm[1][1]:>5}")
+    print(f"실제: 이상 {cm[1][0]:>5}  {cm[1][1]:>5}")
     print()
     print("Classification Report")
     print(classification_report(y_true, y_pred, target_names=TARGET_NAMES))

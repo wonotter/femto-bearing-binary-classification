@@ -30,6 +30,10 @@ N_LATE_FILES = 100 # 마지막 파일 수 (이상)
 LABEL_NORMAL = 0
 LABEL_DEGRADED = 1
 
+# 축 선택 후보 (6:2:2 Validation에서 F1+AUC로 비교)
+# 'h': 수평만, 'v': 수직만, 'both': 두 축 모두
+AXIS_CANDIDATES = ['h', 'v', 'both']
+
 # 랜덤 seed 값으로 해당 숫자를 넣으면 데이터를 일관적으로 추출하는 것이 보장됨
 RANDOM_STATE = 42
 

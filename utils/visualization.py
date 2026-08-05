@@ -91,6 +91,132 @@ def plot_model_comparison(results):
     plt.show()
 
 
+def plot_axis_selection_results(axis_report, title=None):
+    """
+    축 선택(H / V / Both) Validation F1·AUC 결과를
+    표 + 막대 그래프로 시각화한다.
+    """
+    from features.axis_selector import AXIS_LABEL
+
+    axis_log = axis_report.get('axis_log', [])
+    selected_axis = axis_report.get('selected_axis')
+    if not axis_log:
+        print("[WARN] axis_report에 시각화할 axis_log가 없습니다.")
+        return
+
+    if title is None:
+        title = '축 선택 비교 (Validation F1 + AUC)'
+
+    col_labels = [
+        '축', '특징 수',
+        'SVM F1', 'SVM AUC',
+        'RF F1', 'RF AUC',
+        '평균 F1', '평균 AUC',
+        '종합 점수', '선택',
+    ]
+
+    cell_text = []
+    row_colors = []
+    highlight = '#FFF3CD'  # 선택 행
+    normal_row = '#FFFFFF'
+    header_color = '#D9E8FB'
+
+    for row in axis_log:
+        axis = row['axis']
+        is_selected = (axis == selected_axis)
+        cell_text.append([
+            AXIS_LABEL.get(axis, axis),
+            str(row['n_features']),
+            f"{row['svm_val_f1']:.4f}",
+            f"{row['svm_val_auc']:.4f}",
+            f"{row['rf_val_f1']:.4f}",
+            f"{row['rf_val_auc']:.4f}",
+            f"{row['mean_val_f1']:.4f}",
+            f"{row['mean_val_auc']:.4f}",
+            f"{row['combined_score']:.4f}",
+            '★' if is_selected else '',
+        ])
+        row_colors.append(highlight if is_selected else normal_row)
+
+    fig = plt.figure(figsize=(14, 7))
+    fig.suptitle(title, fontsize=14, fontweight='bold', y=0.98)
+
+    # --- 위: 결과 표 ---
+    ax_table = fig.add_subplot(2, 1, 1)
+    ax_table.axis('off')
+    table = ax_table.table(
+        cellText=cell_text,
+        colLabels=col_labels,
+        cellLoc='center',
+        loc='center',
+    )
+    table.auto_set_font_size(False)
+    table.set_fontsize(10)
+    table.scale(1.0, 1.6)
+
+    n_rows = len(cell_text)
+    n_cols = len(col_labels)
+    for j in range(n_cols):
+        table[(0, j)].set_facecolor(header_color)
+        table[(0, j)].set_text_props(fontweight='bold')
+    for i in range(n_rows):
+        for j in range(n_cols):
+            table[(i + 1, j)].set_facecolor(row_colors[i])
+            if selected_axis is not None and axis_log[i]['axis'] == selected_axis:
+                table[(i + 1, j)].set_text_props(fontweight='bold')
+
+    selected_label = AXIS_LABEL.get(selected_axis, str(selected_axis))
+    ax_table.set_title(
+        f'선택 축: {selected_label}  |  '
+        f'종합 = (평균 F1 + 평균 AUC) / 2  |  '
+        f'노란 행 = 최종 선택',
+        fontsize=11,
+        pad=12,
+    )
+
+    # --- 아래: 평균 F1 / 평균 AUC / 종합 점수 막대 ---
+    ax_bar = fig.add_subplot(2, 1, 2)
+    axes_names = [AXIS_LABEL.get(r['axis'], r['axis']) for r in axis_log]
+    x = np.arange(len(axes_names))
+    width = 0.25
+
+    mean_f1 = [r['mean_val_f1'] for r in axis_log]
+    mean_auc = [r['mean_val_auc'] for r in axis_log]
+    combined = [r['combined_score'] for r in axis_log]
+
+    bars1 = ax_bar.bar(x - width, mean_f1, width, label='평균 Val F1', color='#4C78A8')
+    bars2 = ax_bar.bar(x, mean_auc, width, label='평균 Val AUC', color='#F58518')
+    bars3 = ax_bar.bar(x + width, combined, width, label='종합 점수', color='#54A24B')
+
+    for bars in (bars1, bars2, bars3):
+        for bar in bars:
+            h = bar.get_height()
+            ax_bar.text(
+                bar.get_x() + bar.get_width() / 2, h + 0.01,
+                f'{h:.3f}', ha='center', va='bottom', fontsize=8,
+            )
+
+    # 선택된 축 x틱 강조
+    tick_labels = []
+    for name, row in zip(axes_names, axis_log):
+        if row['axis'] == selected_axis:
+            tick_labels.append(f'{name} ★')
+        else:
+            tick_labels.append(name)
+
+    ax_bar.set_xticks(x)
+    ax_bar.set_xticklabels(tick_labels)
+    ax_bar.set_ylim(0, 1.15)
+    ax_bar.set_ylabel('Score')
+    ax_bar.set_xlabel('가속도 축')
+    ax_bar.legend(loc='upper right')
+    ax_bar.grid(True, axis='y', alpha=0.3)
+    ax_bar.set_title('축별 Validation 점수 비교', fontsize=12)
+
+    fig.tight_layout(rect=[0, 0, 1, 0.96])
+    plt.show()
+
+
 def plot_feature_importance(importances, feature_names, top_n=10, title=None):
     """Random Forest Feature Importance 수평 막대 그래프"""
     indices = np.argsort(importances)[::-1][:top_n]

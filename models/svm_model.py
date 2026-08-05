@@ -25,6 +25,11 @@ class SVMClassifier:
         X_scaled = self.scaler.transform(X)
         return self.model.predict(X_scaled)
 
+    def decision_scores(self, X):
+        """ROC-AUC 계산용 연속 점수 (decision_function)."""
+        X_scaled = self.scaler.transform(X)
+        return self.model.decision_function(X_scaled)
+
     def evaluate(self, X, y, set_name='Test'):
         y_pred = self.predict(X)
         print(f"\n SVM - {set_name} 평가")
@@ -34,6 +39,7 @@ class SVMClassifier:
 
 def run_svm_622(X_train, X_val, X_test, y_train, y_val, y_test):
     print("=" * 60)
+    print("2단계: SVM 하이퍼파라미터 탐색 (선택된 축 고정)")
     print("SVM (RBF Kernel) - 6:2:2 홀드아웃 검증")
     print("=" * 60)
 

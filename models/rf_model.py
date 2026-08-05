@@ -26,6 +26,10 @@ class RFClassifier:
     def predict_proba(self, X):
         return self.model.predict_proba(X)
 
+    def positive_scores(self, X):
+        """ROC-AUC 계산용 이상(class=1) 확률."""
+        return self.model.predict_proba(X)[:, 1]
+
     def evaluate(self, X, y, set_name='Test'):
         y_pred = self.predict(X)
         print(f"\n Random Forest - {set_name} 평가")
@@ -50,6 +54,7 @@ class RFClassifier:
 
 def run_rf_622(X_train, X_val, X_test, y_train, y_val, y_test, feature_names):
     print("=" * 60)
+    print("2단계: RF 하이퍼파라미터 탐색 (선택된 축 고정)")
     print("Random Forest - 6:2:2 홀드아웃 검증")
     print("=" * 60)
 

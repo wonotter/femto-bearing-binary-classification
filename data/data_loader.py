@@ -56,11 +56,11 @@ def prepare_dataset(bearing_dir=BEARING_DIR):
     df = pd.DataFrame(records)
     feature_names = [c for c in df.columns if c != 'label']
     X = df[feature_names].values # label을 제외한 14개 열만 꺼냄
-    y = df['label'].values # 정상(0) or 열화(1)의 정답 상태를 가지고 있는 정답지
+    y = df['label'].values # 정상(0) or 이상(1)의 정답 상태를 가지고 있는 정답지
 
     print(f"\n특징 추출 완료")
     print(f"샘플: {X.shape[0]}, 특징 수: {X.shape[1]}")
-    print(f"정상(0): {np.sum(y == LABEL_NORMAL)}, 열화(1): {np.sum(y == LABEL_DEGRADED)}")
+    print(f"정상(0): {np.sum(y == LABEL_NORMAL)}, 이상(1): {np.sum(y == LABEL_DEGRADED)}")
 
     return X, y, feature_names
 
@@ -104,7 +104,7 @@ def prepare_datasets(conditions, base_dir=BASE_DIR):
     print(f"\n{'=' * 40}")
     print(f"다중 조건 병합 완료: {conditions}")
     print(f"샘플: {X.shape[0]}, 특징 수: {X.shape[1]}")
-    print(f"정상(0): {np.sum(y == LABEL_NORMAL)}, 열화(1): {np.sum(y == LABEL_DEGRADED)}")
+    print(f"정상(0): {np.sum(y == LABEL_NORMAL)}, 이상(1): {np.sum(y == LABEL_DEGRADED)}")
     print(f"{'=' * 40}")
 
     return X, y, feature_names
