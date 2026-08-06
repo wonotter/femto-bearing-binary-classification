@@ -165,7 +165,7 @@ def prepare_raw_dataset(bearing_dir=BEARING_DIR, signal_length=SIGNAL_LENGTH):
     y = np.asarray(labels, dtype=np.int64)
 
     print(f"[Raw] 완료 - 샘플: {X.shape[0]}, shape: {X.shape[1:]}")
-    print(f"[Raw] 정상(0): {np.sum(y == LABEL_NORMAL)}, 열화(1): {np.sum(y == LABEL_DEGRADED)}")
+    print(f"[Raw] 정상(0): {np.sum(y == LABEL_NORMAL)}, 이상(1): {np.sum(y == LABEL_DEGRADED)}")
     return X, y
 
 
