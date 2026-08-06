@@ -78,3 +78,36 @@ RF_FIXED_PARAMS = {
     'min_samples_split': 5,
     'min_samples_leaf': 2,
 }
+
+# ---------------------------------------------------------------------------
+# 1D-CNN (WDCNN 스타일: 넓은 1층 커널 + 이후 작은 커널)
+# 입력: 원시 진동 (channels, length) = (2, 2560)  # h_acc, v_acc
+# 구성은 SVM/RF와 동일: BASE(탐색 제외) + GRID(탐색) + FIXED(7:3)
+# ---------------------------------------------------------------------------
+SIGNAL_LENGTH = 2560          # CSV 한 파일의 시점(행) 수. Cond별 파일 개수와 무관
+CNN_IN_CHANNELS = 2           # 수평·수직 가속도
+
+# 1D-CNN 기본 파라미터 (탐색하지 않는 고정값)
+CNN1D_BASE_PARAMS = {
+    'in_channels': CNN_IN_CHANNELS,
+    'signal_length': SIGNAL_LENGTH,
+    'wide_kernel': 64,
+    'channels': (16, 32, 64, 64),
+    'weight_decay': 1e-4,
+    'epochs': 80,
+    'batch_size': 32,
+    'random_state': RANDOM_STATE,
+}
+
+# 1D-CNN 홀드아웃 검증에서 탐색할 하이퍼파라미터 후보
+CNN1D_PARAM_GRID = {
+    'lr': [1e-3, 1e-4],
+    'dropout': [0.3, 0.5],
+}
+
+# 1D-CNN 7:3 고정 파라미터 (Validation 없이 사용)
+CNN1D_FIXED_PARAMS = {
+    **CNN1D_BASE_PARAMS,
+    'lr': 1e-3,
+    'dropout': 0.3,
+}
