@@ -58,34 +58,70 @@ def plot_confusion_matrices(results):
 
 
 def plot_model_comparison(results):
-    """모델별 Accuracy, Precision, Recall, F1 비교 막대 그래프"""
-    metric_keys = ['accuracy', 'precision', 'recall', 'f1']
+    """모델별 Accuracy, Precision, Recall, F1, AUC 비교 막대 그래프"""
+    metric_keys = ['accuracy', 'precision', 'recall', 'f1', 'auc']
+    metric_labels = {
+        'accuracy': 'Accuracy',
+        'precision': 'Precision',
+        'recall': 'Recall',
+        'f1': 'F1',
+        'auc': 'AUC',
+    }
     model_names = list(results.keys())
 
     values = {key: [] for key in metric_keys}
     for name in model_names:
         metrics = results[name]['test']['metrics']
         for key in metric_keys:
-            values[key].append(metrics[key])
+            # AUC가 None이면 0으로 표시 (단일 클래스 등)
+            val = metrics.get(key)
+            values[key].append(0.0 if val is None else float(val))
 
     x = np.arange(len(model_names))
-    width = 0.18
-    fig, ax = plt.subplots(figsize=(10, 5))
+    width = 0.15
+    fig, ax = plt.subplots(figsize=(11, 5))
 
     for i, key in enumerate(metric_keys):
-        bars = ax.bar(x + i * width, values[key], width, label=key.capitalize())
+        bars = ax.bar(x + i * width, values[key], width, label=metric_labels[key])
         for bar in bars:
             h = bar.get_height()
             ax.text(
                 bar.get_x() + bar.get_width() / 2, h + 0.01,
-                f'{h:.2f}', ha='center', va='bottom', fontsize=9
+                f'{h:.2f}', ha='center', va='bottom', fontsize=8
             )
 
-    ax.set_xticks(x + width * 1.5)
+    ax.set_xticks(x + width * 2)
     ax.set_xticklabels(model_names)
     ax.set_ylim(0, 1.15)
     ax.set_ylabel('Score')
     ax.set_title('모델 성능 비교 (Test Set)', fontsize=14, fontweight='bold')
+    ax.legend()
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_auc_comparison(results):
+    """모델별 AUC 수치만 비교하는 막대 그래프"""
+    model_names = list(results.keys())
+    auc_values = []
+    for name in model_names:
+        auc = results[name]['test']['metrics'].get('auc')
+        auc_values.append(0.0 if auc is None else float(auc))
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    colors = plt.cm.Blues(np.linspace(0.45, 0.85, len(model_names)))
+    bars = ax.bar(model_names, auc_values, color=colors, width=0.55)
+
+    for bar, val in zip(bars, auc_values):
+        ax.text(
+            bar.get_x() + bar.get_width() / 2, val + 0.01,
+            f'{val:.4f}', ha='center', va='bottom', fontsize=11, fontweight='bold'
+        )
+
+    ax.set_ylim(0, 1.15)
+    ax.set_ylabel('AUC')
+    ax.set_title('모델별 AUC 비교 (Test Set)', fontsize=14, fontweight='bold')
+    ax.axhline(y=0.5, color='gray', linestyle='--', linewidth=1, label='랜덤 기준 (0.5)')
     ax.legend()
     plt.tight_layout()
     plt.show()

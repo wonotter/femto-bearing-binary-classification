@@ -178,16 +178,22 @@ class CNN1DClassifier:
     @torch.no_grad()
     def _predict_loader(self, loader):
         self.model.eval()
-        preds, trues = [], []
+        preds, scores, trues = [], [], []
         for xb, yb in loader:
             xb = xb.to(self.device)
             logits = self.model(xb)
-            pred = (torch.sigmoid(logits) >= 0.5).long().cpu().numpy()
+            prob = torch.sigmoid(logits).cpu().numpy()
+            pred = (prob >= 0.5).astype(np.int64)
             preds.append(pred)
+            scores.append(prob)
             trues.append(yb.numpy().astype(np.int64))
-        return np.concatenate(trues), np.concatenate(preds)
+        return (
+            np.concatenate(trues),
+            np.concatenate(preds),
+            np.concatenate(scores),
+        )
 
-    def predict(self, X):
+    def _prepare_loader(self, X):
         if self.model is None or self.channel_mean_ is None:
             raise RuntimeError("모델이 학습되지 않았습니다. train()을 먼저 호출하세요.")
         X = np.asarray(X)
@@ -199,14 +205,24 @@ class CNN1DClassifier:
                 f"in_channels={self.params['in_channels']}"
             )
         X_n = self._normalize(X)
-        loader = self._make_loader(X_n, np.zeros(len(X), dtype=np.float32), shuffle=False)
-        _, y_pred = self._predict_loader(loader)
+        return self._make_loader(X_n, np.zeros(len(X), dtype=np.float32), shuffle=False)
+
+    def predict(self, X):
+        loader = self._prepare_loader(X)
+        _, y_pred, _ = self._predict_loader(loader)
         return y_pred
 
+    def predict_proba(self, X):
+        """양성(열화) 클래스 확률. ROC-AUC 계산용."""
+        loader = self._prepare_loader(X)
+        _, _, y_score = self._predict_loader(loader)
+        return y_score
+
     def evaluate(self, X, y, set_name='Test'):
-        y_pred = self.predict(X)
+        loader = self._prepare_loader(X)
+        _, y_pred, y_score = self._predict_loader(loader)
         print(f"\n 1D-CNN - {set_name} 평가")
-        metrics = print_evaluation_report(y, y_pred)
+        metrics = print_evaluation_report(y, y_pred, y_score=y_score)
         return y_pred, metrics
 
 

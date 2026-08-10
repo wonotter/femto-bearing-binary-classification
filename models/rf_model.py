@@ -28,8 +28,10 @@ class RFClassifier:
 
     def evaluate(self, X, y, set_name='Test'):
         y_pred = self.predict(X)
+        # 양성(열화) 클래스 확률로 AUC 계산
+        y_score = self.predict_proba(X)[:, 1]
         print(f"\n Random Forest - {set_name} 평가")
-        metrics = print_evaluation_report(y, y_pred)
+        metrics = print_evaluation_report(y, y_pred, y_score=y_score)
         return y_pred, metrics
 
     def print_feature_importance(self, top_n=10):

@@ -11,6 +11,7 @@ from models.cnn1d_model import run_cnn1d_622, run_cnn1d_73
 from utils.visualization import (
     plot_confusion_matrices,
     plot_model_comparison,
+    plot_auc_comparison,
     plot_feature_importance,
     plot_explained_variance,
     plot_pca_loading,
@@ -125,6 +126,7 @@ def main():
     }
     plot_confusion_matrices(first_results)
     plot_model_comparison(first_results)
+    plot_auc_comparison(first_results)
     plot_feature_importance(
         rf_622['feature_importances'],
         rf_622['feature_names'],
@@ -245,6 +247,7 @@ def main():
 
         plot_confusion_matrices(cond_results)
         plot_model_comparison(cond_results)
+        plot_auc_comparison(cond_results)
 
         for cond_name, cond_result in cond_results.items():
             test_data = cond_result['test']
