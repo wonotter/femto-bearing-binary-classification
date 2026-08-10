@@ -36,7 +36,14 @@ def main():
 
     # 실험 시작 전: 학습 조건별 시간 영역 특성 추이 (실제 파일 번호)
     print("시간 영역 분석 시각화 (전체 수명 + early/late 구간 표시)")
+    print("[학습 데이터]")
     for cond in TRAIN_CONDITIONS:
+        bearing_dir = os.path.join(BASE_DIR, cond)
+        print(f"  - {cond}")
+        plot_time_domain_analysis(bearing_dir=bearing_dir, bearing_name=cond)
+
+    print("[테스트 데이터]")
+    for cond in TEST_CONDITIONS:
         bearing_dir = os.path.join(BASE_DIR, cond)
         print(f"  - {cond}")
         plot_time_domain_analysis(bearing_dir=bearing_dir, bearing_name=cond)
