@@ -8,8 +8,8 @@ BASE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'FEMTO_Beari
 
 # 학습/테스트 조건 (리스트에 조건명을 추가·삭제하면 수량 변경 가능)
 # 예: TRAIN_CONDITIONS = ['Cond1_1']  /  ['Cond1_1', 'Cond1_2', 'Cond1_5']
-TRAIN_CONDITIONS = ['Cond1_1', 'Cond1_2', 'Cond1_3']
-TEST_CONDITIONS = ['Cond1_4', 'Cond1_5', 'Cond1_6']
+TRAIN_CONDITIONS = ['Cond2_1', 'Cond2_2', 'Cond2_3']
+TEST_CONDITIONS = ['Cond2_4', 'Cond2_5', 'Cond2_6', 'Cond2_7']
 
 # 단일 조건 로더 기본값 (하위 호환)
 BEARING_DIR = os.path.join(BASE_DIR, TRAIN_CONDITIONS[0])
@@ -34,7 +34,7 @@ LABEL_DEGRADED = 1
 RANDOM_STATE = 42
 
 # PCA
-PCA_N_COMPONENTS = 3
+PCA_N_COMPONENTS = 4
 
 # SVM 기본 파라미터 (탐색하지 않는 고정값)
 SVM_BASE_PARAMS = {
@@ -77,4 +77,37 @@ RF_FIXED_PARAMS = {
     'max_depth': None,
     'min_samples_split': 5,
     'min_samples_leaf': 2,
+}
+
+# ---------------------------------------------------------------------------
+# 1D-CNN (WDCNN 스타일: 넓은 1층 커널 + 이후 작은 커널)
+# 입력: 원시 진동 (channels, length) = (2, 2560)  # h_acc, v_acc
+# 구성은 SVM/RF와 동일: BASE(탐색 제외) + GRID(탐색) + FIXED(7:3)
+# ---------------------------------------------------------------------------
+SIGNAL_LENGTH = 2560          # CSV 한 파일의 시점(행) 수. Cond별 파일 개수와 무관
+CNN_IN_CHANNELS = 2           # 수평·수직 가속도
+
+# 1D-CNN 기본 파라미터 (탐색하지 않는 고정값)
+CNN1D_BASE_PARAMS = {
+    'in_channels': CNN_IN_CHANNELS,
+    'signal_length': SIGNAL_LENGTH,
+    'wide_kernel': 64,
+    'channels': (16, 32, 64, 64),
+    'weight_decay': 1e-4,
+    'epochs': 80,
+    'batch_size': 32,
+    'random_state': RANDOM_STATE,
+}
+
+# 1D-CNN 홀드아웃 검증에서 탐색할 하이퍼파라미터 후보
+CNN1D_PARAM_GRID = {
+    'lr': [1e-3, 1e-4],
+    'dropout': [0.3, 0.5],
+}
+
+# 1D-CNN 7:3 고정 파라미터 (Validation 없이 사용)
+CNN1D_FIXED_PARAMS = {
+    **CNN1D_BASE_PARAMS,
+    'lr': 1e-3,
+    'dropout': 0.3,
 }

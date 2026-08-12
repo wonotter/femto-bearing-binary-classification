@@ -25,10 +25,16 @@ class SVMClassifier:
         X_scaled = self.scaler.transform(X)
         return self.model.predict(X_scaled)
 
+    def decision_function(self, X):
+        """ROC-AUC 계산용 decision score (양성 클래스 방향)."""
+        X_scaled = self.scaler.transform(X)
+        return self.model.decision_function(X_scaled)
+
     def evaluate(self, X, y, set_name='Test'):
         y_pred = self.predict(X)
+        y_score = self.decision_function(X)
         print(f"\n SVM - {set_name} 평가")
-        metrics = print_evaluation_report(y, y_pred)
+        metrics = print_evaluation_report(y, y_pred, y_score=y_score)
         return y_pred, metrics
 
 
